@@ -162,8 +162,7 @@ These issues threaten our original decentralization goals.
 In particular, a unique timeline implies that all Internet content should be
 subject to the same consensus rules, which neglects all subjectivity that is
 inherent to social content.
-%For instance, high quality posts from minority groups may be suppressed in
-%favor of more popular content.
+%
 Another limitation of cryptocurrencies is that it is not possible to revoke
 content in the middle of the blockchain, which is inadmissible considering
 illegal content (e.g., hate speech).
@@ -179,7 +178,6 @@ with reputation tokens, which are used to evaluate other posts with likes and
 dislikes.
 With such \emph{proof-of-authoring} mechanism, token generation is expensive,
 while verification is cheap and made by multiple users.
-% (akin to Bitcoin's proof-of-work).
 %
 Due to decentralization, posts in a timeline form a causal graph with only
 partial order, which we promote to a total order based on the reputation of
@@ -190,15 +188,6 @@ likes with insufficient reputation (akin to Bitcoin's double spending).
 Our second contribution is to allow that users create diversified forums of
 interest (instead of a singleton blockchain), each counting as an independent
 timeline with its own subjective consensus etiquette.
-%author's reputation: in the presence of a fork, 
-%a consensus order in which
-%that authors with more reputation are ordered first (akin to
-%Bitcoin's longest chain).
-%that does not imply a total
-%order of events (akin to Bitcoin's blockchain).
-%Therefore, to reach consensus, in the case of non-causal relationships, we
-%The resulting order is then verified for conflicting operations, such as likes
-%with insufficient \reps (akin to Bitcoin's double spending).
 %
 Our third contribution is to support content removal without compromising the
 integrity of the decentralized blockchain.
@@ -312,7 +301,7 @@ These forks have more associated work from active users and are analogous to
 longest chains in Bitcoin.
 %
 In technical terms, we can adapt a topological sorting algorithm to favor
-reputation when deciding between branches in the chain DAG.
+reputation when deciding between branches in the forum DAG.
 
 Figure~\ref{fig.reps}.A illustrates the consensus criteria.
 %, still abstractly, since we did not discuss the actual rules for content creation and rating.
@@ -382,28 +371,15 @@ However, the longer a peer remains disconnected, the more conflicting
 operations it may see, and the higher are the chances of rejection when
 rejoining.
 
-\begin{table*}
-\centering
-\includegraphics[width=\textwidth]{rules.png}
-\caption{
-    Reputation rules for public forum chains in \FC.
-    The chosen constants ($30~reps$, $24h$, etc) are arbitrary and target
-    typical Internet forums with moderate traffic.
-    A future revision of the protocol could support them as chain parameters.
-}
-\label{fig.rules}
-\end{table*}
-
 As a counterpoint to the consensus order in Figure~\ref{fig.reps}.B, maybe
-users $a$ and $b$ have abandoned the chain for months, and thus \code{branch-1}
+users $a$ and $b$ have abandoned the forum for months, and thus \code{branch-1}
 is actually legit.
 In this case, users $a$ and $b$ might be the ones trying to take over the
-chain.
+forum.
 Yet another possibility is that both branches are legit but became disconnected
 for a long period of time.
-%It is simply not possible to judge with confidence which is the case.
 In any case, it is unacceptable that a very old remote branch affects a long
-active local chain.
+active forum.
 %
 For this reason, the consensus algorithm includes an extra constraint that
 prevents long-lasting local branches to merge, creating \emph{hard forks} in
@@ -445,43 +421,94 @@ branch from a local machine \code{i} are as follows:
           lexicographical order of the block hashes immediately after the
           common prefix.
 \end{itemize}
-%The first rule to apply determines the merging result:
 
-\begin{comment}
-A fundamental drawback of Merkle~DAGs is that all replicas in the system need
-to store the complete graph in order to synchronize and verify new blocks.
-As a counter measure, tree pruning techniques allow to remove parts of the
-graph to save space~\cite{p2p.prune}.
-Also, the hard fork threshold in the consensus algorithm allows to prune the
-chain DAGs, at least for lightweight clients in resource-constrained devices.
-However, these devices can no longer verify older forks and need to delegate
-trust to more powerful peers.
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth]{state-revoked.png}
+\caption{
+    State machine of posts:
+    \code{BLOCKED} posts are not linked in the DAG.
+    \code{ACCEPTED} posts are linked and retransmitted.
+    The payload of \code{REVOKED} posts are not retransmitted.
+}
+\label{fig.state}
+\end{figure}
+
+As described in Figure~\ref{fig.state}, a forum post has three possible states:
+\code{BLOCKED}, \code{ACCEPTED}, or \code{REVOKED}.
 %
-A more pragmatic approach, but which requires cooperation among users, is to
-revoke past posts, which deletes associated payloads to save some space.
-This approach is more feasible in private groups and public identities chains,
-tough.
-\end{comment}
+If the author has reputation, a new post is immediately \code{ACCEPTED} in the
+forum.
+%
+Otherwise, it is \code{BLOCKED} and requires a like from another user.
+Blocked posts are not considered part of the forum DAG in the sense that new
+posts do not link back to it.
+In addition, peers are not required to hold blocked posts and neither
+retransmit them to other peers.
+However, if blocked posts are not disseminated, new users will never have the
+chance to be welcomed with a like.
+A reasonable policy is to hold blocked posts in a temporary bag and retransmit
+them for some visibility in the network.
+%
+Once accepted, a post becomes part of the forum and can never be removed
+again, since Merkle~DAGs are immutable by design.
+%Note that blocked posts that become accepted are always succeeded by a
+%\emph{like} (Figure~\ref{fig.forum}).
+%
+However, if the number of dislikes exceeds an arbitrary threshold (e.g., more
+dislike than likes), the block becomes \code{REVOKED} and its payload is not
+retransmitted to other peers.
+Note that a block hash does not depend on its associated payload, but only on
+the payload hash.
+Hence, it is safe to remove the payload as long as one can prove its revoked
+state.
+Later, if the post receives new likes, it means that the payload is still known
+somewhere and peers can request it when synchronizing again.
+We consider that revoking posts is fundamental in the context of content
+publishing, and thus, an important contribution of this work.
 
-\section{Public Forum in Freechains}
+\section{Public Forums in Freechains}
 \label{sec.freechains}
 
+\FC~\cite{fcs.sbseg20} is an unstructured peer-to-peer topic-based
+publish-subscribe protocol, in which each topic or \emph{chain} is a replicated
+Merkle-DAG representing the causal relationships between the messages.
+Considering that the DAG itself represents the state of the peers, the protocol
+ensures strong eventual consistency~\cite{fed.matrix,p2p.byz}.
+%
+The operation of the protocol is typical of publish-subscribe systems: an
+author publishes a post to a chain, and subscribed users eventually receive the
+message.
+% by synchronizing DAGs.
+
+\begin{table}
+\centering
+\includegraphics[width=\textwidth]{rules.png}
+\caption{
+    Reputation rules for public forum chains in \FC.
+    The chosen constants ($30~reps$, $24h$, etc) are arbitrary and target
+    typical Internet forums with moderate traffic.
+    A future revision of the protocol could support them as chain parameters.
+}
+\label{fig.rules}
+\end{table}
+
 We integrated the proposed reputation and consensus mechanism in the public
-forums of \FC to support content moderation and mitigate abuse in the chains.
+forums of \FC to support content moderation and mitigate abuse.
 Table~\ref{fig.rules} details the concrete rules we conceived, which are
-discussed as follows.
+discussed as follows through an example.
 Authors have to sign their posts in order to be accounted by the reputation
 system and operate in the chains.
-The example that follows creates an identity whose public key is assigned as
-the pioneer in a public chain (prefix~$\#$ in Table~\ref{fig.table}):
+We start by creating an identity whose public key is assigned as the pioneer in
+a chain named \emph{forum}:
 
 {\footnotesize
 \begin{verbatim}
  > freechains keys pubpvt 'pioneer-password'
  4B56AD.. DA3B5F..  <-- public and private keys
- > freechains '#forum' join '4B56AD..'
+ > freechains 'forum' join '4B56AD..'
  10AE3E..           <-- hash representing the chain
- > freechains '#forum' post --sign='DA3B5F..' \
+ > freechains 'forum' post --sign='DA3B5F..' \
     'The purpose of this chain is...'
  1_CC2184..         <-- hash representing the post
 \end{verbatim}
@@ -528,12 +555,12 @@ posts a message, which is welcomed with a like signed by the pioneer:
 \begin{verbatim}
  > freechains keys pubpvt 'newbie-password'
  503AB5.. 41DDF1..  <-- public and private keys
- > freechains '#forum' join '4B56AD..'
+ > freechains 'forum' join '4B56AD..'
  10AE3E..           <-- same pioneer as before
- > freechains '#forum' post 'Im a newbie...' \
+ > freechains 'forum' post 'Im a newbie...' \
     --sign='41DDF1..'
  2_C3A40F..         <-- blocked post
- > freechains '#forum' like '2_C3A40F..' \
+ > freechains 'forum' like '2_C3A40F..' \
     --sign='DA3B5F..'
  3_59F3E1..         <-- hash representing the like
 \end{verbatim}
@@ -590,7 +617,9 @@ Note that rule~\code{1.b} awards at most one post of each author at a time.
 Hence, new posts during the 24-hour period will not award each of them with
 extra \reps.
 Note also that rule~\code{4.b} limits authors to at most \nreps{30}, which
-provides incentives to spend likes and thus decentralize the network.
+provides incentives to spend likes and thus decentralize the network, while
+rule~\code{4.c} limits the size of posts to at most \emph{128kB} to prevent
+DDoS attacks using gigantic blocked posts.
 
 Likes and dislikes (rules \code{3.a} and \code{3.b}) serve three purposes
 in the chains:
@@ -622,54 +651,6 @@ As detailed next, the actual contents of a post may be revoked if it has at
 least 3 dislikes, and more dislikes than likes (rule~\code{3}).
 However, considering that \reps are scarce, dislikes are encouraged to combat
 abusive behavior, but not to eliminate divergences of opinion.
-
-\begin{figure}
-\centering
-\includegraphics[width=0.75\textwidth]{state-revoked.png}
-\caption{
-    State machine of posts:
-    \code{BLOCKED} posts are not linked in the DAG.
-    \code{ACCEPTED} posts are linked and retransmitted.
-    The payload of \code{REVOKED} posts are not retransmitted.
-}
-\label{fig.state}
-\end{figure}
-
-A post has three possible states: \code{BLOCKED}, \code{ACCEPTED}, or
-\code{REVOKED}.
-Figure~\ref{fig.state} specifies the transitions between states.
-%
-If the author has reputation, a new post is immediately \code{ACCEPTED} in the
-chain.
-%
-Otherwise, it is \code{BLOCKED} and requires a like from another user.
-Blocked posts are not considered part of the chain DAG in the sense that new
-posts do not link back to it.
-In addition, peers are not required to hold blocked posts and neither
-retransmit them to other peers.
-However, if blocked posts are not disseminated, new users will never have the
-chance to be welcomed with a like.
-A reasonable policy is to hold blocked posts in a temporary bag and retransmit
-them for some visibility in the network.
-Rule~\code{4.c} limits the size of posts to at most \emph{128kB} to prevent
-DDoS attacks using gigantic blocked posts.
-%
-Once accepted, a post becomes part of the chain and can never be removed
-again, since Merkle~DAGs are immutable by design.
-%Note that blocked posts that become accepted are always succeeded by a
-%\emph{like} (Figure~\ref{fig.forum}).
-%
-However, if the number of dislikes exceeds the threshold (rule~\code{3}), the
-block becomes \code{REVOKED} and its payload is not retransmitted to other
-peers.
-Note that a block hash does not depend on its associated payload, but only on
-the payload hash.
-Hence, it is safe to remove the payload as long as one can prove its revoked
-state.
-Later, if the post receives new likes, it means that the payload is still known
-somewhere and peers can request it when synchronizing again.
-We consider that revoking posts is fundamental in the context of content
-publishing, and thus, an important contribution of this work.
 
 In summary, the operations and constraints in Table~\ref{fig.rules} together
 with the consensus rules of Figures~\ref{fig.reps}~and~\ref{fig.hard} empower
