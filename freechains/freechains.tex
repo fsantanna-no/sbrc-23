@@ -192,23 +192,10 @@ We integrated the proposed consensus algorithm into \FC~\cite{fcs.sbseg20}, a
 practical peer-to-peer content dissemination protocol that provides strong
 eventual consistency~\cite{p2p.crdts,p2p.sec}.
 
-As an application example, we prototyped a permissionless decentralized version
-control system (dVCS) that relies on consensus to apply automatic merges.
-A dVCS is relevant because
-    (i)   it is a collaborative application,
-    (ii)  with commits that need evaluation from users, and
-    (iii) with merges that require human intervention, which we propose to
-          automate.
-%
-Hence, as a forth contribution, we show how the consensus mechanism can empower
-mostly conflict-free replicated data types (\emph{quasi-CRDTs}) when they do
-encounter conflicting operations.
-
 In summary, we propose
     (i)   a consensus mechanism based on proof-of-authoring,
-    (ii)  for independent user-generated blockchains,
-    (iii) which supports content removal, and
-    (iv)  which can automate conflict resolution in quasi-CRDTs.
+    (ii)  for independent user-generated blockchains, and
+    (iii) which supports content removal.
 %
 As a main limitation, the forum causal graphs are ever growing data structures
 that carry considerable metadata overhead.
@@ -226,88 +213,9 @@ In Section~\ref{sec.freechains}, we introduce the basic functionalities of \FC
 to create, evaluate, and synchronize posts.
 In Section~\ref{sec.consensus}, we describe the reputation and consensus
 mechanism applied to public forums and evaluate its perfomance.
-In Section~\ref{sec.crdts}, we discuss the correspondences with CRDTs, and
-prototype a simple dVCS.
 In Section~\ref{sec.related}, we compare our system with publish-subscribe
 protocols, federated applications, and fully peer-to-peer systems.
 In Section~\ref{sec.conclusion}, we conclude this work.
-
-\begin{comment}
-As a derived contribution, the consensus implies a total order among messages,
-which backs the use of CRDTs~\cite{p2p.merkle-crdts} in collaborative authoring
-platforms.
-
-https://twitter.com/francesc/status/794647418222448640?lang=en
-
-
-- CONCLUSION
-Our main contribution is to make decentralized public forums viable in
-practice.
-The proposed reputation and consensus mechanism depends exclusively on human
-work, contrasting with most systems that rely on extrinsic resources, such as
-CPU power.
-The general idea of the algorithm can be applied to any system that structures
-its messages as DAGs.
-
-which contributed with more work to the forum.
-
-However, to match our target domain of content publishing, token generation and
-verification are subjective, based on human creativity and judgement.
-
-unopinionated
-For instance, users can be arbitrarily censored or even removed from the
-platform with no justifications.
-In addition, because authored content token, forkeable, diversity
-
-- permissionless
-- social consensus vs economic consensus
-    - participation, linear, topped
-- forkeable, not unique, diversity
-The protocol prevents Sybil attacks with a reputation system
- that moderates
-content and, at the same time, delivers network consensus.
-
-
-- consensus is still important
-but no need to be unique / winner takes all
-thats why other xxx are not a solution
-
-If this decision is left to
-At the application level (e.g., end-user filters), does not eliminate traffic
-The technologies that enable this are “self-certifying protocols”, based on cryptographic signatures and hashes.
-self-certifying protocols that all or nothing
-
-goal
-    - same usability/friendlyness of decentralized protocols
-    - reach consensus
-    - remove economic costs
-
-Scuttlebutt embraces subjectivity...
-No notion of public forums, only independent user timelines
-
-The only way to create new bitcoins is to work towards consensus in the network
-by proposing a total order among transactions in the system.
-%
-This way, Bitcoin prevents double spending~\cite{p2p.bitcoin}, which is
-analogous to conflicting message delivery in public discussions.
-    %deciding between \emph{X} and \emph{Y} as a group is the same as
-    %transferring bitcoins to \emph{X} and \emph{Y} with insufficient funds for
-    %both.
-%
-However, Bitcoin just supports transfers between users, with no subjective
-judgment that could affect the actual transactions.
-In contrast, our goal is to use social interactions between humans to evaluate
-content and mitigate abuse at the same time.
-
-In summary
-more traditional tokenless decentralized protocols
-
-cant directly buy reputation
-    - subject to judgement
-
-token-less protocols
-value is on the contents
-\end{comment}
 
 \section{\FC}
 \label{sec.freechains}
@@ -1393,292 +1301,15 @@ Discussion:
 - time of consensus
 \end{comment}
 
-\section{Correspondences with CRDTs}
-\label{sec.crdts}
-
-Conflict-free replicated data types (CRDTs)~\cite{p2p.crdts} serve as a robust
-foundation to model concurrent updates in collaborative local-first
-applications~\cite{p2p.local}.
-However, CRDTs are not a panacea and often require human intervention to solve
-specific conflicts (\emph{quasi-CRDTs}), such as manual merges in version
-control systems (VCSs).
-%
-Our observation is that, since the proposed consensus algorithm already relies
-on human interactions, we can use it to resolve conflicts automatically.
-
-We propose a three-layered CRDT scheme to build decentralized collaborative
-applications:
-    state-based CRDTs at transport layer (CvRDTs),
-    operation-based CRDTs at application layer (CmRDTs), and
-    quasi-CRDTs with arbitrary operations after consensus is applied.
-
-At the transport layer, Merkle~DAG chains are trivial CvRDTs because they
-converge to the same state on synchronization~\cite{p2p.merkle-crdts}.
-%
-At the application layer, however, DAGs loose this property because branches
-might be processed in different orders across peers, resulting in incompatible
-states.
-An interesting approach is to require blocks to represent commutative
-operations, thus resulting in CmRDTs~\cite{p2p.merkle-crdts}.
-%
-CmRDTs have the advantage to store only small updates that are sufficient to
-reconstruct any version of the data.
-%This contrasts with CvRDTs, which would require to store complete versions.
-%
-At the third layer, the consensus algorithm transforms a chain DAG into a
-totally-ordered set, which supports quasi-CRDTs with non-commutative
-operations.
-Note that even full-CRDTs can benefit from consensus, since they often
-encounter corner cases that require arbitrary choices (e.g., aggregating
-updates or ressurecting data~\cite{p2p.automerge}).
-
-Next, we illustrate this three-layered CRDT scheme through an example of a
-simple permissionless decentralized VCS (dVCS) implemented on top of public
-chains.
-
-\subsection{A dVCS with Automatic Merges}
-
-We built a simple dVCS with the functionalities (and associated \FC
-operations) as follows:
-%
-\begin{itemize}
-    \setlength{\itemindent}{-8pt}
-    \item initialize a repository (\code{join})
-    \item commit local changes to repository (\code{post})
-    \item checkout repository changes to local (\code{consensus/get})
-    \item synchronize with remote peer (\code{send/recv})
-    \item rate and revoke commits (\code{like/dislike})
-\end{itemize}
-%
-The system relies on public forum chains, which means that repositories are
-permissionless and adhere to the proposed reputation and consensus mechanism.
-The main innovations in this system are that
-    (i)  users can rate commits to reject them, and
-    (ii) checkout operations resolve conflicts automatically based on consensus
-         order.
-
-As a concrete example, we model a Wiki article as a chain behaving as a VCS
-holding its full edition history.
-To model a complete Wiki platform, we assume that an article could refer to
-other articles using hyperlinks to other chains.
-
-Most VCS operations, except \code{commit} and \code{checkout}, map directly to
-single \FC commands.
-For instance, to create a repository, we simply join a public chain with the
-name of the file we want to track.
-In the commands that follow, we create a repository with multiple pioneers, and
-then edit and commit the file twice:
-
-{\footnotesize
-\begin{verbatim}
- > freechains '#p2p.md' join A2885F.. 2B9C32..
- 2F11BF..
- > echo "P2p networking is..." > p2p.md
- > freechains-vcs '#p2p.md' commit --sign=69929..
- 1_4F3EE1..
- > echo "The [USENET](#usenet.md), ..." >> p2p.md
- > freechains-vcs '#p2p.md' commit --sign=69929..
- 2_B58D22..
-\end{verbatim}
-}
-
-The \code{commit} operation expands as follows:
-
-{\footnotesize
-\begin{verbatim}
- > freechains-vcs '#p2p.md' checkout p2p.remote
- > diff p2p.remote p2p.md > p2p.patch
- > freechains '#p2p.md' post p2p.patch --sign=69929..
-\end{verbatim}
-}
-
-A commit first makes a checkout from the repository into temporary file
-\code{p2p.remote}.
-Then, it compares this version against our local changes, saving the diffs
-into file \code{p2p.patch}.
-A patch contains the minimal set of changes to apply back into the repository,
-and represents a CmRDT operation in our model.
-Finally, the commit posts the patch file back into the chain.
-Evidently, the chain name and signature (\code{\#p2p.md} and \code{--sign=...})
-are parameters in the actual implementation of \code{commit}.
-The checkout operation is expanded further.
-
-Much time later, the other pioneer synchronizes with us, checks out the file,
-and then edits and commits it back:
-
-{\footnotesize
-\begin{verbatim}
- > freechains '#p2p.md' recv '<our-ip>'
- 2/2    <-- two commits above
- > freechains-vcs '#p2p.md' checkout p2p.md
- > echo "P2P does not scale!" >> p2p.md
- > freechains-vcs '#p2p.md' commit --sign=320B5..
- 3_AE3A1B..
-\end{verbatim}
-}
-
-A \code{checkout} recreates the latest version of the file in the repository by
-applying all patches since the genesis block.
-Recall that each patch represents a CmRDT operation to recreate the final state
-of the data.
-The \code{checkout} expands as follows:
-
-{\footnotesize
-\begin{verbatim}
- > rm p2p.md && touch p2p.md
- > for blk in `freechains '#p2p.md' consensus` do
-    freechains '#p2p.md' get payload $blk > p2p.patch
-    patch p2p.md p2p.patch
-    if [ $? != 0 ]; then
-     echo $blk  <-- hash of failing patch
-     break      <-- ignore remaining patches
-    fi
-  done
-\end{verbatim}
-}
-
-The \code{consensus} operation of \FC returns all hashes since
-the genesis block, respecting the consensus order.
-The loop reads each of the payloads representing the patches and apply them in
-order to recreate the file.
-If any of the patches fail, the command exhibits the hash of the offending
-block and terminates.
-We discuss this behavior further, when we illustrate commit conflicts.
-
-Since the last commit above is clearly wrong (P2P networks do scale!), other
-users in the network will dislike it until the block becomes
-\code{REVOKED} in the chain: % (as described before in Figure~\ref{fig.state}):
-
-{\footnotesize
-\begin{verbatim}
- > freechains '#p2p.md' dislike 3_AE3A1B.. --sign=USR1
- > freechains '#p2p.md' dislike 3_AE3A1B.. --sign=USR2
- > freechains '#p2p.md' dislike 3_AE3A1B.. --sign=USR3
- > freechains-vcs '#p2p.md' checkout p2p.md
- > cat p2p.md
- P2p networking is...
- The [USENET](#usenet.md), ...  <-- no 3rd line
-\end{verbatim}
-}
-
-This way, the checkout operation above will apply an empty patch associated
-with the revoked block, effectively removing the wrong line from the file.
-This mechanism illustrates how the reputation system enables collaborative
-permissionless edition and curation.
-
-Next, we create a conflicting situation in which two authors edit and commit
-the same line of the file concurrently:
-
-{\footnotesize
-\begin{verbatim}
- # PEER A (more reputation):
- > sed -i 's/P2p/P2P/g' p2p.md    <-- fix typo
- > freechains-vcs '#p2p.md' commit --sign=69929..
- 4_A..
-
- # PEER B (less reputation):
- > sed -i 's/networking/computing/g' p2p.md
- > freechains-vcs '#p2p.md' commit --sign=320B5..
- 4_B..
-
- # SYNCHRONIZE (exchange conflicting forks):
- > freechains '#p2p.md' recv '<our-ip>'
- 1 / 1
- > freechains '#p2p.md' send '<our-ip>'
- 1 / 1
- > freechains-vcs '#p2p.md' checkout p2p.md
- 1 hunk FAILED -- saving rejects to file p2p.md.rej
- 4_B..
- > cat p2p.md
- P2P networking is... <-- typo fixed (not computing)
- The [USENET](#usenet.md), ...
-\end{verbatim}
-}
-
-After they commit the conflicting changes, the peers synchronize in both
-directions and reach the state of Figure~\ref{fig.conflict}.
-When we checkout the file, the patches are applied respecting the consensus
-order.
-As a result, we see that the first branch is applied, but not the second,
-leaving the file in the longest possible consistent state.
-%
-This happens because of the \code{break} in the checkout operation:
-once a conflict is found, no further patches apply in any of the remaining
-branches.
-%
-We chose to adopt a \emph{first write wins} resolution to favor work in the
-branches with more reputation.
-Nevertheless, the failing patch branch is not totally ignored, since the
-checkout saves the conflict file and indicates the block causing it.
-%
-We believe this optimistic choice that does not reject both patches is the most
-advantageous, since it keeps the file in an usable state and warns about the
-conflict to resolve.
-For instance, the authors can later decide to dislike one of the two commits to
-revoke it and remove the warning.
-
-\begin{figure}
-\centering
-\includegraphics[width=0.35\textwidth]{conflict.png}
-\caption{
-    The branches in the DAG are ordered by reputation.
-    Only the first patch is applied successfully (first write wins).
-}
-\label{fig.conflict}
-\end{figure}
-
-\subsection{Discussion}
-
-In summary, the proposed reputation and consensus mechanism empowers a simple
-dVCS with cooperative authoring and automatic conflict resolution.
-It only requires the standard \emph{diff \& patch} tools and the basic API of
-\FC.
-
-We apply the proposed three-layered CRDT scheme as follows:
-The first layer transports the whole commit history of small patches as a CvRDT
-between peers, which eventually reach the same DAG state.
-At this layer, the DAG is just raw data with no attached semantics.
-%
-In the second layer, peers need to interpret the DAG as a CmRDT of small
-editions to recreate the file.
-The \emph{patch} tool is mostly commutative, except when branches modify the
-same lines.
-%
-Hence, in these situations, we resort to the third layer with the consensus
-order, and apply the patches sequentially until a conflict occurs.
-The final state of the file is guaranteed to be consistent, i.e., the result of
-a sequence of correct patch applications.
-
-\begin{comment}
-Applications that rely only on commutative operations can traverse the DAG in
-any causal order, possibly in parallel.
-This is the case of most social apps with threaded conversations, in which
-branches typically do not interfere with each other.
-For instance, it is not problematic to rely on block timestamps to display
-messages in chats, forums, and social media posts.
-This is also the general case for notifications in these applications, such as
-status updates and social engagements.
-\end{comment}
-
-Towards richer decentralized collaborative applications, we can employ CRDTs to
-model data other than raw text.
-As an example, \emph{Automerge}~\cite{p2p.automerge} manipulates JSON objects,
-which supports non-trivial datasets with robust merging policies, but which
-could still benefit from consensus to resolve corner cases.
-
 \section{Related Work}
 \label{sec.related}
-
-% Content Dissemination
-% CRDTs
-% Consensus
 
 Many other systems have been proposed for decentralized content
 sharing~\cite{p2p.survey,p2p.ecosystem}.
 Here we consider the classes of publish-subscribe, federated, and peer-to-peer
 protocols.
 
-\subsection{Publish-Subscribe Protocols}
+%\subsection{Publish-Subscribe Protocols}
 
 Decentralized topic-based publish-subscribe protocols, such as
     \emph{XMPP}~\cite{pubsub.xmpp},
@@ -1718,7 +1349,7 @@ In summary, \FC and \emph{pubsub} middlewares operate at different network
 layers, which suggests that \FC could benefit of the latter to manage the
 interconnections between peers.
 
-\subsection{Federated Protocols}
+%\subsection{Federated Protocols}
 
 Federated protocols, such as e-mail, allow users from one domain to exchange
 messages with users of other domains seamlessly.
@@ -1749,7 +1380,7 @@ The number of hops and header overhead can be much smaller in client-server
 architectures compared to peer-to-peer systems, which typically include message
 signing, hash linking, and extra verification rules.
 
-\subsection{Peer-to-Peer Protocols}
+%\subsection{Peer-to-Peer Protocols}
 
 Bitcoin~\cite{p2p.bitcoin} is probably the most successful permissionless
 network, but serves specifically for electronic cash.
@@ -1848,15 +1479,6 @@ in conflicting orders.
 The proposed consensus mechanism addresses permissionless writes and provides
 a total order for applications (at the cost of rollbacks).
 
-A similar dVCS have been recently proposed~\cite{p2p.dvcs}, with a DAG
-representation and merging policies.
-To resolve \emph{competition conflicts}, they propose to use an external
-scoring function, such as users' reputations.
-Our proposed consensus mechanism internalizes such reputation scoring function.
-Integrated reputation also prevents SPAM and abusive behavior from byzantine
-nodes, which could otherwise generate very large graphs that take forever to
-synchronize (as discussed for Byzantine Causal Broadcast~\cite{p2p.dag.sync}).
-
 \section{Conclusion}
 \label{sec.conclusion}
 
@@ -1866,9 +1488,8 @@ We enumerate four main contributions:
     (i)   human authored content as a scarce resource
           (\emph{proof-of-authoring});
     (ii)  diversified public forums, each as an independent blockchain with
-          subjective moderation rules;
+          subjective moderation rules; and
     (iii) abusive content removal preserving data integrity; and
-    (iv)  three-layered CRDTs to build collaborative applications.
 
 The key insight of the consensus mechanism is to use the human authoring
 ability as a scarce resource to determine consensus.
@@ -1893,23 +1514,6 @@ majority, not depending on centralized authorities.
 We simulate the behavior of existing chat and newsgroup forums as if they were
 using \FC to show the practicability of the protocol as a descentralized
 alternative for public forums.
-
-%The protocol replicates Merkle~DAGs that represent causal relationships between
-%messages in the network.
-%The consensus algorithm transforms DAGs into totally-ordered sets, which
-%eliminates conflicts analogous to double spending in Bitcoin.
-%This mechanism can be applied to any system that uses DAGs to structure its
-%messages.
-
-On top of the proposed three-layered CRDT architecture, we prototyped a
-decentralized version control system that resolves commit conflicts
-automatically:
-    (i)   at the transport layer, the full commit history is held in a
-          Merkle~DAG counting as a CvRDT;
-    (ii)  at the application layer, the commit patches operate as (mostly)
-          commutative CmRDT operations; and
-    (iii) after consensus is applied, merge conflicts are resolved
-          automatically.
 
 Finally, we do not claim that the proposed reputation system enforces ``good''
 human behavior in any way.
