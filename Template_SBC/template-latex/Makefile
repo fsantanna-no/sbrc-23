@@ -5,4 +5,4 @@ all:
 	pdflatex sbc-template
 
 clean:
-	rm *.aux *.bbl *.blg *.log
+	rm -f *.aux *.bbl *.blg *.log
