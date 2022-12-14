@@ -70,6 +70,27 @@ minute, the peers need to roll back only 3\% of the time.
 \end{abstract}
 
 \begin{resumo} 
+Em aplicações de rede de tempo real, tais como documentos colaborativos, os
+usuários interagem remotamente e compartilham a mesma experiência, como se
+estivessem usando a mesma máquina localmente.
+%
+Nesse trabalho, nós propomos um middleware para \emph{aplicações simétricas
+peer-to-peer} nas quais instâncias descentralizadas podem efetuar broadcasts de
+eventos assíncronos e exibirem comportamento idêntico.
+%
+Os pares podem entrar e sair da rede a qualquer momento.
+Os desenvolvedores devem aderir a uma API determinística e sem estados
+internos.
+%
+O middleware é responsável por sincronizar os eventos em uma linha de tempo
+global compartilhada por toda a rede.
+Além disso, com base em snapshots da memória e simulação determinística, uma
+``máquina do tempo'' pode retroceder o estado dos pares para ressincronizá-los.
+%
+Nós mostramos que o middleware suporta aplicações com mais de 20 pares em uma
+topologia heterogênea sob alto nível de churns.
+Em um cenário com latência de 50ms e 25 eventos por minuto, os pares precisaram
+retroceder somente 3\% do tempo.
 \end{resumo}
 
 \section{Introduction}
