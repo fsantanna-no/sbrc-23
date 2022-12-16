@@ -51,7 +51,7 @@ In real-time networked applications, such as collaborative documents, users can
 interact remotely and yet share the exact same experience as if they were using
 a single machine.
 %
-In this work, we propose a middleware for \emph{symmetric peer-to-peer
+In this work, we propose a middleware for these \emph{symmetric peer-to-peer
 applications} in which decentralized instances can broadcast asynchronous
 events and yet conform to identical behavior.
 %
@@ -64,7 +64,7 @@ timeline across the network.
 Also, based on memory snapshots and deterministic simulation, a ``time machine''
 can rollback conflicting peers to resynchronize their states.
 %
-We show that the middleware can handle applications with over 20 peers in a
+We show that the middleware can handle applications with over 20 peers in
 heterogeneous topologies under high churns.
 For instance, in a scenario with a network latency of 50ms and 25 events per
 minute, the peers need to roll back only 3\% of the time.
@@ -75,9 +75,9 @@ Em aplicações de rede de tempo real, tais como documentos colaborativos, os
 usuários interagem remotamente e compartilham a mesma experiência, como se
 estivessem usando a mesma máquina localmente.
 %
-Nesse trabalho, nós propomos um middleware para \emph{aplicações simétricas
-peer-to-peer} nas quais instâncias descentralizadas podem efetuar broadcasts de
-eventos assíncronos e exibirem comportamento idêntico.
+Nesse trabalho, nós propomos um middleware para essas \emph{aplicações
+peer-to-peer simétricas} nas quais instâncias descentralizadas podem efetuar
+broadcasts de eventos assíncronos e exibirem comportamento idêntico.
 %
 Os pares podem entrar e sair da rede a qualquer momento.
 Os desenvolvedores devem aderir a uma API determinística e sem estados
@@ -88,8 +88,8 @@ global compartilhada por toda a rede.
 Além disso, com base em snapshots da memória e simulação determinística, uma
 ``máquina do tempo'' pode retroceder o estado dos pares para ressincronizá-los.
 %
-Nós mostramos que o middleware suporta aplicações com mais de 20 pares em uma
-topologia heterogênea sob alto nível de churns.
+Nós mostramos que o middleware suporta aplicações com mais de 20 pares em
+topologias heterogêneas sob alto nível de churns.
 Em um cenário com latência de 50ms e 25 eventos por minuto, os pares precisaram
 retroceder somente 3\% do tempo.
 \end{resumo}
@@ -143,14 +143,14 @@ We then measure (a) the recurrence of time travels, (b) the real-time pace of
 peers, and (c) the recoverability from churns, such that they validate our
 goals above, respectively.
 %
-As results, we show that the last two goals are met even under extreme
+As results, we show that goals (b) and (c) are met even under extreme
 conditions: peers exhibit a time mismatch of under $0.2\%$ and take less than
 $1.5s$ to recover from churns.
 %
-For the first goal, we analyze the scenarios in which the middleware can meet
+For the goal (a), we analyze the scenarios in which the middleware can meet
 event deadlines with the desired performance.
-As an example, peers need to roll back only $3\%$ of the time under a scenario
-with a network latency of $50ms$ and 25 events per minute.
+As an example, peers need to roll back only $3\%$ of the time under a network
+latency of $50ms$ and 25 events per minute.
 
 In Section~\ref{sec.related}, we revisit existing solutions for symmetric
 distributed applications.
@@ -195,7 +195,7 @@ We focus on
     (a) how the network is organized,
     (b) how global time is determined, and
     (c) how events are propagated and applied.
-Figure~\ref{fig.table} compares three selected works regarding these aspects.
+Figure~\ref{fig.table} compares two selected works regarding these aspects.
 %
 At the end of this section, we also discuss related work on local and
 distributed time machines.
@@ -323,7 +323,7 @@ latency, we show 3.1\% of rollbacks with responsiveness of 500ms, which we
 classify as moderate performance (Figure~\ref{fig.baks}, framed rectangle in
 the center).
 As expected, the peer-to-peer performance is lower in comparison to centralized
-solutions, but still viable in many scenarios, as detalied in
+solutions, but still viable in many scenarios, as we detail in
 Section~\ref{sec.eval}.
 
 \begin{comment}
@@ -432,9 +432,8 @@ As described in the Introduction, the middleware ensures that all peers
     (a) meet event deadlines,
     (b) advance in sync in real time, and
     (c) can leave and join the network and remain symmetric:
-%
-\begin{enumerate}
-\item \textbf{Event Deadlines:}
+
+\hspace{-1cm}\textbf{(a) Event Deadlines:}
 Due to the inherent latency of networks, peers generate events with a
 deliberate $\Delta$ so that they can reach other peers in time to be applied in
 sync.
@@ -448,8 +447,8 @@ As we detail further, rolling back a peer requires to simulate the whole
 application execution and event occurrences from the beginning.
 As an optimization, the middleware takes periodic snapshots locally to avoid
 full simulation.
-%
-\item \textbf{Time Synchronization:}
+
+\hspace{-1cm}\textbf{(b) Time Synchronization:}
 Since peers run in different machines, their timelines will inevitably be out
 of sync because applications are launched locally at different times, and
 because internal clocks may diverge over time (e.g., from rollbacks or timer
@@ -466,8 +465,8 @@ the middleware proceeds as follows:
 %
 To avoid abrupt visual changes, the middleware makes smooth time transitions
 that take up to $1s$ to complete.
-%
-\item \textbf{Peer Churn:}
+
+\hspace{-1cm}\textbf{(c) Peer Churn:}
 Considering that we target dynamic networks, it is important that the
 middleware can handle arrival and departure of peers seamlessly.
 Note that high churn may lead to intermittent network partitions.
@@ -478,7 +477,6 @@ receives from other peer all events that ever happened, in order.
 This is trivial since all peers already need to hold the full event history (as
 described in item (a)).
 % including their absolute timestamps in the shared timeline.
-\end{enumerate}
 
 \subsection{The Programming API}
 \label{sec.tml.api}
@@ -496,21 +494,21 @@ int main (void) {
         1, 50,          // peer identifier, simulation FPS
         sizeof(G), &G,  // pre-allocated full state
         cb_ini, cb_sim, cb_ren, cb_evt
-            // callbacks: init/quit, simulation, rendering
+            // callbacks: init/quit, simulation, rendering, events
     );
 }
 \end{verbatim}
 }
 
 The middleware assumes that each peer assigns itself a unique identifier (e.g.,
-a combination its MAC \& IP addresses).
+a combination of its MAC \& IP addresses).
 %, such as TODO~\cite{TODO:hash}.
 The FPS must be the same in all peers to ensure bit-identical simulation.
 
-Note that callbacks is a common technique for event-driven
+Note that using callbacks is a common technique for event-driven
 programming in Games, GUIs, and interactive applications in general, sharing
-recognition with related techniques such as \emph{MVC},
-\emph{Publish-Subscribe}, and \emph{Observer} patterns~\cite{meyer,nystrom}.
+similarities with \emph{MVC}, \emph{Publish-Subscribe}, and \emph{Observer}
+patterns~\cite{meyer,nystrom}.
 %
 Furthermore, the default run-to-completion semantics of callbacks is key to
 ensure the desired determinism, since unlike threads, they run sequentially and
@@ -523,7 +521,7 @@ atomically from start to end~\cite{events,threads}.
 %Time Systems. Proceedings of the IEEE, 79(9):1270–1282, 1991.
 %see also twelve
 
-%\subsubsection{Application State}
+\subsubsection{Application State}
 %\label{sec.tml.api.state}
 
 The variable \code{G} passed to the middleware holds the full application
@@ -549,7 +547,7 @@ meta-programming offer better mechanisms to take memory snapshots.
 Another alternative is to provide a serialization callback, which we left for
 future work.
 
-%\subsubsection{Application Events}
+\subsubsection{Application Events}
 %\label{sec.tml.api.events}
 
 When an application generates events, they need to be broadcast to the network
@@ -576,7 +574,7 @@ enum {
 \end{verbatim}
 }
 
-%\subsubsection{Initialization Callback}
+\subsubsection{Initialization Callback}
 %\label{sec.tml.api.cb_ini}
 
 The middleware calls \code{cb\_ini} twice: at the beginning and at the end of
@@ -603,7 +601,7 @@ void cb_ini (int ini) {
 \end{verbatim}
 }
 
-%\subsubsection{Simulation Callback}
+\subsubsection{Simulation Callback}
 %\label{sec.tml.api.cb_sim}
 
 The middleware calls \code{cb\_sim} every frame or event occurrence, which
@@ -649,7 +647,7 @@ This is the reason why we define \code{START} as an event like any other:
 travelling requires to simulate the execution from the beginning, event by
 event.
 
-%\subsubsection{Rendering Callback}
+\subsubsection{Rendering Callback}
 %\label{sec.tml.api.cb_ren}
 
 Time travelling is also the reason why \code{cb\_sim} must be separated from
@@ -671,9 +669,10 @@ void cb_ren (void) {
 \end{verbatim}
 }
 
-%\subsubsection{Events Callback}
+\subsubsection{Events Callback}
 %\label{sec.tml.api.cb_evt}
 
+\vspace{-5pt}
 The callback \code{cb\_evt} is called by the middleware in real time, whenever
 a local SDL event occurs.
 This callback has two goals:
@@ -712,9 +711,11 @@ all peers
     (b) advance in sync in real time, and
     (c) can leave and join the network and remain symmetric.
 
-%\subsubsection{Event Broadcasting}
+\vspace{-5pt}
+\subsubsection{Event Broadcasting}
 %\label{sec.tml.middleware.events}
 
+\vspace{-5pt}
 As illustrated in Figure~\ref{fig.middleware}, events are broadcast between
 peers with a deadline $\Delta$ scheduled to the future, such that all peers are
 able to apply them in sync.
@@ -750,7 +751,6 @@ typedef struct {
     uint32_t tick;      // tick to apply
     p2p_evt  evt;       // event id + payload
 } p2p_pak;
-
 struct {
     int i;  // next event to apply in real time
     int n;  // number of events in the queue
@@ -759,7 +759,7 @@ struct {
 \end{verbatim}
 }
 
-%\subsubsection{The Main Loop}
+\subsubsection{The Main Loop}
 %\label{sec.tml.middleware.loop}
 
 The middleware main loop \code{p2p\_loop} is responsible for calling the
@@ -843,7 +843,7 @@ Regarding time ticks, we call \code{cb\_sim} and \code{cb\_ren} in real time
 The middleware also takes periodic snapshots of the application state to
 optimize time travelling. % (Section~\ref{sec.tml.api.state}).
 
-%\subsubsection{The Time Machine}
+\subsubsection{The Time Machine}
 %\label{sec.tml.middleware.travel}
 
 The last important mechanism of the middleware is the time machine, which
@@ -878,6 +878,7 @@ experience smooth time transitions.
 %\subsubsection{Summary}
 %\label{sec.tml.middleware.summary}
 
+\begin{comment}
 This section provides an overview of the middleware implementation to answer
 how it ensures the desired properties in concrete terms as follows:
     (a) peers meet event deadlines either travelling back and forth or in real
@@ -887,6 +888,7 @@ how it ensures the desired properties in concrete terms as follows:
     (c) peers can join the network at any time and still catch up in time by
         receiving the full event history.
         %(Section~\ref{sec.tml.middleware.events}).
+\end{comment}
 
 %\newpage
 \section{Evaluation}
@@ -1003,7 +1005,7 @@ The experiments uses $1$ process for each peer in a single Linux machine
 We now detail the results and how we instrument the middleware implementation
 to measure the properties of interest above:
 
-\textbf{(a) Recurrence of time travels:}
+\hspace{-1cm}\textbf{(a) Recurrence of time travels:}
 Every time a peer is ahead in time and needs to travel back, we output its id
 and how much ticks it needs to travel back.
 At the end, we measure the percentage of the sum of all time travel ticks over
@@ -1023,7 +1025,7 @@ $25~evt/min$.
 Each rectangle uses a different $\Delta$ multiplier, showing a good performance
 for $5x$, moderate for $2x$, and poor for $1x$.
 
-\textbf{(b) Real-time pace of peers:}
+\hspace{-1cm}\textbf{(b) Real-time pace of peers:}
 All peers output their ticks continuously, which we compare in the shared
 timeline.
 Every time we see a greater tick never seen in the timeline before, we start to
@@ -1039,7 +1041,7 @@ significant variance.
 Therefore, we omit the resulting table (akin to Figure~\ref{fig.baks}), which
 would not provide further insights.
 
-\textbf{(c) Correctness of unstable peers:}
+\hspace{-1cm}\textbf{(c) Correctness of unstable peers:}
 We tweak our simulation to make each peer remain $40s$ online and $20s$
 offline in the average, including peers \code{9-11} in the middle of the
 network.
@@ -1117,7 +1119,7 @@ resynchronize their state through time travels.
 %We assume that peers are non-malicious and that they can assign themselves
 %unique identifiers.
 
-The middleware can handle applications with over 20 peers in a heterogeneous
+The middleware can handle applications with over 20 peers in heterogeneous
 topologies and under high churns.
 %
 We show that peers can
